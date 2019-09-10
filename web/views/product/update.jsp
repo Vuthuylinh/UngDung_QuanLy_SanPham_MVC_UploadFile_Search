@@ -27,7 +27,10 @@
         <fieldset>
             <legend>Product information:</legend>
             <table>
-
+                <tr>
+                    <td> ID</td>
+                    <td><p>${requestScope.product.getId()}</p></td>
+                </tr>
                 <tr>
                     <td> Product name</td>
                     <td><input type="text" id="name" name="productName" value="${requestScope["product"].getName()}" ></td>

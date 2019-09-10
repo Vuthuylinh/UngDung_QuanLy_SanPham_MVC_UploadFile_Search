@@ -21,7 +21,7 @@ import java.util.List;
         maxFileSize = 1024 * 1024 * 10,
         maxRequestSize = 1024 * 1024 * 50)
 public class ProductServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
+    //private static final long serialVersionUID = 1L;
 
     public static final String SAVE_DIRECTORY = "images";
 
@@ -84,31 +84,8 @@ public class ProductServlet extends HttpServlet {
 
     private void createProduct(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         try {
+            String picture = getImageName(request);
             RequestDispatcher requestDispatcher;
-
-            String picture = "";
-            String aapPath = request.getServletContext().getRealPath("");
-            aapPath = aapPath.replace('\\', '/');
-            String fullSavePath = null;
-            if (aapPath.endsWith("/")) {
-                fullSavePath = aapPath + SAVE_DIRECTORY;
-            } else {
-                fullSavePath = aapPath + "/" + SAVE_DIRECTORY;
-            }
-
-            File fileSaveDir = new File(fullSavePath);
-            if (!fileSaveDir.exists()) {
-                fileSaveDir.mkdir();
-            }
-            for (Part part : request.getParts()) {
-                String fileName = extractFileName(part);
-                if (fileName != null && fileName.length() > 0) {
-                    String filePath = fullSavePath + File.separator + fileName;
-                    System.out.println("write an attachment to file" + filePath);
-                    part.write(filePath);
-                    picture = fileName;
-                }
-            }
             int id = Integer.parseInt(request.getParameter("productId"));
             String name = request.getParameter("productName");
             int price = Integer.parseInt(request.getParameter("productPrice"));
@@ -138,33 +115,38 @@ public class ProductServlet extends HttpServlet {
 
     }
 
-    private void updateProduct(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
-        RequestDispatcher requestDispatcher;
-        try {
-            String picture = request.getParameter("productPicture");
-            String aapPath = request.getServletContext().getRealPath("");
-            aapPath = aapPath.replace('\\', '/');
-            String fullSavePath = null;
-            if (aapPath.endsWith("/")) {
-                fullSavePath = aapPath + SAVE_DIRECTORY;
-            } else {
-                fullSavePath = aapPath + "/" + SAVE_DIRECTORY;
-            }
+    private String getImageName(HttpServletRequest request) throws IOException, ServletException {
 
-            File fileSaveDir = new File(fullSavePath);
-            if (!fileSaveDir.exists()) {
-                fileSaveDir.mkdir();
+        String picture = "";
+        String aapPath = request.getServletContext().getRealPath("");
+        aapPath = aapPath.replace('\\', '/');
+        String fullSavePath = null;
+        if (aapPath.endsWith("/")) {
+            fullSavePath = aapPath + SAVE_DIRECTORY;
+        } else {
+            fullSavePath = aapPath + "/" + SAVE_DIRECTORY;
+        }
+
+        File fileSaveDir = new File(fullSavePath);
+        if (!fileSaveDir.exists()) {
+            fileSaveDir.mkdir();
+        }
+        for (Part part : request.getParts()) {
+            String fileName = extractFileName(part);
+            if (fileName != null && fileName.length() > 0) {
+                String filePath = fullSavePath + File.separator + fileName;
+                System.out.println("write an attachment to file" + filePath);
+                part.write(filePath);
+                picture = fileName;
             }
-            for (Part part : request.getParts()) {
-                String fileName = extractFileName(part);
-                if (fileName != null && fileName.length() > 0) {
-                    String filePath = fullSavePath + File.separator + fileName;
-                    System.out.println("write an attachment to file" + filePath);
-                    part.write(filePath);
-                    picture = fileName;
-                }
-            }
-            int id = Integer.parseInt(request.getParameter("productId"));
+        }
+        return picture;
+    }
+
+    private void updateProduct(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
+        String picture = getImageName(request);
+        RequestDispatcher requestDispatcher;
+        int id = Integer.parseInt(request.getParameter("id"));
             String name = request.getParameter("productName");
             int price = Integer.parseInt(request.getParameter("productPrice"));
             String description = request.getParameter("productDescription");
@@ -176,7 +158,7 @@ public class ProductServlet extends HttpServlet {
             product.setPrice(price);
             product.setDescription(description);
             product.setSupplier(supplier);
-            product.setPicture(picture);
+            if (picture!= "") product.setPicture(picture);
             this.productService.update(id, product);
             request.setAttribute("product", product);
             request.setAttribute("message", "Product information was just updated!");
@@ -186,11 +168,6 @@ public class ProductServlet extends HttpServlet {
             } catch (ServletException | IOException e) {
                 e.printStackTrace();
             }
-        } catch (Exception e) {
-            e.getMessage();
-            e.printStackTrace();
-        }
-
     }
     private void deleteProduct(HttpServletRequest request, HttpServletResponse response){
         int id= Integer.parseInt(request.getParameter("id"));
@@ -291,6 +268,7 @@ public class ProductServlet extends HttpServlet {
         if (product == null) {
             requestDispatcher = request.getRequestDispatcher("error-404.jsp");
         } else {
+            request.setAttribute("product", product);
             requestDispatcher = request.getRequestDispatcher("views/product/update.jsp");
         }
         try {
